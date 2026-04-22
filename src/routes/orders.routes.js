@@ -2,17 +2,18 @@ import { Router } from "express";
 
 import { Order } from "../models/Order.js";
 import { attachUserIfPresent, requireAdmin, requireAuth } from "../middleware/auth.js";
+import { asyncHandler } from "../utils/async-handler.js";
 import { recordDateEvent } from "../utils/date-records.js";
 import { normalizePhone } from "../utils/formatters.js";
 
 export const ordersRouter = Router();
 
-ordersRouter.get("/", requireAuth, requireAdmin, async (_req, res) => {
+ordersRouter.get("/", requireAuth, requireAdmin, asyncHandler(async (_req, res) => {
   const orders = await Order.find().sort({ createdAt: -1 });
   res.json(orders);
-});
+}));
 
-ordersRouter.post("/", attachUserIfPresent, async (req, res) => {
+ordersRouter.post("/", attachUserIfPresent, asyncHandler(async (req, res) => {
   const customerName = String(req.body.customerName ?? "").trim();
   const phone = normalizePhone(req.body.phone);
   const address = String(req.body.address ?? "").trim();
@@ -45,9 +46,9 @@ ordersRouter.post("/", attachUserIfPresent, async (req, res) => {
   });
 
   res.status(201).json(order);
-});
+}));
 
-ordersRouter.patch("/:id/status", requireAuth, requireAdmin, async (req, res) => {
+ordersRouter.patch("/:id/status", requireAuth, requireAdmin, asyncHandler(async (req, res) => {
   const nextStatus = String(req.body.status ?? "");
   const allowed = ["new", "confirmed", "shipped", "delivered"];
 
@@ -71,4 +72,4 @@ ordersRouter.patch("/:id/status", requireAuth, requireAdmin, async (req, res) =>
   });
 
   res.json(order);
-});
+}));

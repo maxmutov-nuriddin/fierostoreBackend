@@ -3,13 +3,14 @@ import { Router } from "express";
 
 import { User } from "../models/User.js";
 import { requireAuth } from "../middleware/auth.js";
+import { asyncHandler } from "../utils/async-handler.js";
 import { buildSessionPayload } from "../utils/auth.js";
 import { recordDateEvent } from "../utils/date-records.js";
 import { normalizePhone, phoneToEmail } from "../utils/formatters.js";
 
 export const authRouter = Router();
 
-authRouter.post("/register", async (req, res) => {
+authRouter.post("/register", asyncHandler(async (req, res) => {
   const firstName = String(req.body.firstName ?? "").trim();
   const lastName = String(req.body.lastName ?? "").trim();
   const phone = normalizePhone(req.body.phone);
@@ -44,9 +45,9 @@ authRouter.post("/register", async (req, res) => {
   });
 
   res.status(201).json(buildSessionPayload(user));
-});
+}));
 
-authRouter.post("/login", async (req, res) => {
+authRouter.post("/login", asyncHandler(async (req, res) => {
   const phone = normalizePhone(req.body.phone);
   const password = String(req.body.password ?? "");
 
@@ -73,9 +74,9 @@ authRouter.post("/login", async (req, res) => {
   });
 
   res.json(buildSessionPayload(user));
-});
+}));
 
-authRouter.post("/admin/login", async (req, res) => {
+authRouter.post("/admin/login", asyncHandler(async (req, res) => {
   const email = String(req.body.email ?? "")
     .trim()
     .toLowerCase();
@@ -102,11 +103,11 @@ authRouter.post("/admin/login", async (req, res) => {
   });
 
   res.json(buildSessionPayload(user));
-});
+}));
 
-authRouter.get("/me", requireAuth, async (req, res) => {
+authRouter.get("/me", requireAuth, asyncHandler(async (req, res) => {
   res.json(buildSessionPayload(req.user));
-});
+}));
 
 authRouter.post("/logout", (_req, res) => {
   res.json({ success: true });

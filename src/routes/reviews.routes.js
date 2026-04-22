@@ -4,6 +4,7 @@ import { Router } from "express";
 import { Card } from "../models/Card.js";
 import { Review } from "../models/Review.js";
 import { attachUserIfPresent } from "../middleware/auth.js";
+import { asyncHandler } from "../utils/async-handler.js";
 import { recordDateEvent } from "../utils/date-records.js";
 
 export const reviewsRouter = Router();
@@ -23,7 +24,7 @@ async function syncCardRating(cardId) {
   await Card.findByIdAndUpdate(cardId, { rating: Number(nextRating.toFixed(1)) });
 }
 
-reviewsRouter.get("/", async (req, res) => {
+reviewsRouter.get("/", asyncHandler(async (req, res) => {
   const cardId = String(req.query.cardId ?? "");
 
   if (!mongoose.Types.ObjectId.isValid(cardId)) {
@@ -32,9 +33,9 @@ reviewsRouter.get("/", async (req, res) => {
 
   const reviews = await Review.find({ cardId }).sort({ createdAt: -1 });
   res.json(reviews);
-});
+}));
 
-reviewsRouter.post("/", attachUserIfPresent, async (req, res) => {
+reviewsRouter.post("/", attachUserIfPresent, asyncHandler(async (req, res) => {
   const cardId = String(req.body.cardId ?? "").trim();
   const author = String(req.body.author ?? "Anonymous").trim() || "Anonymous";
   const rating = Number(req.body.rating ?? 0);
@@ -42,6 +43,10 @@ reviewsRouter.post("/", attachUserIfPresent, async (req, res) => {
 
   if (!mongoose.Types.ObjectId.isValid(cardId)) {
     return res.status(400).json({ message: "Valid card id is required." });
+  }
+
+  if (!Number.isFinite(rating) || rating < 0 || rating > 5) {
+    return res.status(400).json({ message: "Rating must be between 0 and 5." });
   }
 
   const card = await Card.findById(cardId);
@@ -66,4 +71,4 @@ reviewsRouter.post("/", attachUserIfPresent, async (req, res) => {
   });
 
   res.status(201).json(review);
-});
+}));

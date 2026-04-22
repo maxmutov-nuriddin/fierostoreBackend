@@ -9,6 +9,7 @@ import { DateRecord } from "../models/DateRecord.js";
 import { Review } from "../models/Review.js";
 import { requireAdmin, requireAuth } from "../middleware/auth.js";
 import { upload } from "../middleware/upload.js";
+import { asyncHandler } from "../utils/async-handler.js";
 import { buildUniqueCardSlug } from "../utils/cards.js";
 import { recordDateEvent } from "../utils/date-records.js";
 import { parseCsv } from "../utils/formatters.js";
@@ -53,6 +54,10 @@ async function findCardByIdOrSlug(identifier) {
   return Card.findOne({ slug: identifier });
 }
 
+function isValidRating(value) {
+  return Number.isFinite(value) && value >= 0 && value <= 5;
+}
+
 function normalizeCardInput(body) {
   return {
     title: String(body.title ?? "").trim(),
@@ -71,12 +76,12 @@ function normalizeCardInput(body) {
   };
 }
 
-cardsRouter.get("/", async (req, res) => {
+cardsRouter.get("/", asyncHandler(async (req, res) => {
   const cards = await Card.find(buildCardQuery(req.query)).sort(buildCardSort(req.query.sort));
   res.json(cards);
-});
+}));
 
-cardsRouter.get("/meta/filter-options", async (_req, res) => {
+cardsRouter.get("/meta/filter-options", asyncHandler(async (_req, res) => {
   const [categories, cardTypes, colors, sizes] = await Promise.all([
     Card.distinct("category"),
     Card.distinct("cardType"),
@@ -90,9 +95,9 @@ cardsRouter.get("/meta/filter-options", async (_req, res) => {
     colors: colors.filter(Boolean),
     sizes: sizes.filter(Boolean)
   });
-});
+}));
 
-cardsRouter.get("/:id", async (req, res) => {
+cardsRouter.get("/:id", asyncHandler(async (req, res) => {
   const card = await findCardByIdOrSlug(req.params.id);
 
   if (!card) {
@@ -100,13 +105,17 @@ cardsRouter.get("/:id", async (req, res) => {
   }
 
   res.json(card);
-});
+}));
 
-cardsRouter.post("/", requireAuth, requireAdmin, async (req, res) => {
+cardsRouter.post("/", requireAuth, requireAdmin, asyncHandler(async (req, res) => {
   const input = normalizeCardInput(req.body);
 
   if (!input.title || !input.description) {
     return res.status(400).json({ message: "Card title and description are required." });
+  }
+
+  if (!isValidRating(input.rating)) {
+    return res.status(400).json({ message: "Rating must be between 0 and 5." });
   }
 
   const card = await Card.create({
@@ -125,9 +134,9 @@ cardsRouter.post("/", requireAuth, requireAdmin, async (req, res) => {
   });
 
   res.status(201).json(card);
-});
+}));
 
-cardsRouter.put("/:id", requireAuth, requireAdmin, async (req, res) => {
+cardsRouter.put("/:id", requireAuth, requireAdmin, asyncHandler(async (req, res) => {
   const card = await Card.findById(req.params.id);
 
   if (!card) {
@@ -135,6 +144,10 @@ cardsRouter.put("/:id", requireAuth, requireAdmin, async (req, res) => {
   }
 
   const input = normalizeCardInput(req.body);
+
+  if (!isValidRating(input.rating)) {
+    return res.status(400).json({ message: "Rating must be between 0 and 5." });
+  }
 
   card.title = input.title || card.title;
   card.slug = await buildUniqueCardSlug(card.title, card.id);
@@ -163,9 +176,9 @@ cardsRouter.put("/:id", requireAuth, requireAdmin, async (req, res) => {
   });
 
   res.json(card);
-});
+}));
 
-cardsRouter.delete("/:id", requireAuth, requireAdmin, async (req, res) => {
+cardsRouter.delete("/:id", requireAuth, requireAdmin, asyncHandler(async (req, res) => {
   const card = await Card.findById(req.params.id);
 
   if (!card) {
@@ -183,9 +196,9 @@ cardsRouter.delete("/:id", requireAuth, requireAdmin, async (req, res) => {
   });
 
   res.json({ success: true });
-});
+}));
 
-cardsRouter.post("/:id/images", requireAuth, requireAdmin, upload.array("images", 8), async (req, res) => {
+cardsRouter.post("/:id/images", requireAuth, requireAdmin, upload.array("images", 8), asyncHandler(async (req, res) => {
   const card = await Card.findById(req.params.id);
 
   if (!card) {
@@ -208,4 +221,4 @@ cardsRouter.post("/:id/images", requireAuth, requireAdmin, upload.array("images"
   });
 
   res.status(201).json({ images: card.images });
-});
+}));
