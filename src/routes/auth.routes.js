@@ -16,8 +16,12 @@ authRouter.post("/register", asyncHandler(async (req, res) => {
   const phone = normalizePhone(req.body.phone);
   const password = String(req.body.password ?? "");
 
-  if (!firstName || !lastName || !phone || password.length < 4) {
-    return res.status(400).json({ message: "First name, last name, phone, and password are required." });
+  if (!firstName || !lastName || !phone) {
+    return res.status(400).json({ message: "First name, last name, and phone are required." });
+  }
+
+  if (password.length < 6) {
+    return res.status(400).json({ message: "Password must be at least 6 characters." });
   }
 
   const existing = await User.findOne({

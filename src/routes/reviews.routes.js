@@ -45,8 +45,8 @@ reviewsRouter.post("/", attachUserIfPresent, asyncHandler(async (req, res) => {
     return res.status(400).json({ message: "Valid card id is required." });
   }
 
-  if (!Number.isFinite(rating) || rating < 0 || rating > 5) {
-    return res.status(400).json({ message: "Rating must be between 0 and 5." });
+  if (!Number.isFinite(rating) || rating < 1 || rating > 5) {
+    return res.status(400).json({ message: "Rating must be between 1 and 5." });
   }
 
   const card = await Card.findById(cardId);

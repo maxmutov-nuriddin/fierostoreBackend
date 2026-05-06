@@ -14,6 +14,11 @@ export function errorHandler(error, _req, res, _next) {
     return res.status(409).json({ message: "This record already exists." });
   }
 
+  if (error?.name === "MulterError") {
+    const status = error.code === "LIMIT_FILE_SIZE" ? 413 : 400;
+    return res.status(status).json({ message: error.message });
+  }
+
   return res.status(error?.statusCode ?? 500).json({
     message: error?.message ?? "Internal server error."
   });

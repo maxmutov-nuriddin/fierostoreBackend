@@ -19,10 +19,13 @@ ordersRouter.post("/", attachUserIfPresent, asyncHandler(async (req, res) => {
   const address = String(req.body.address ?? "").trim();
   const items = Array.isArray(req.body.items) ? req.body.items : [];
   const totalPrice = Number(req.body.totalPrice ?? 0);
-  const status = String(req.body.status ?? "new");
 
   if (!customerName || !phone || !address || !items.length) {
     return res.status(400).json({ message: "Name, phone, address, and items are required." });
+  }
+
+  if (totalPrice < 0) {
+    return res.status(400).json({ message: "Total price cannot be negative." });
   }
 
   const order = await Order.create({
@@ -32,7 +35,7 @@ ordersRouter.post("/", attachUserIfPresent, asyncHandler(async (req, res) => {
     address,
     items,
     totalPrice,
-    status
+    status: "new"
   });
 
   await recordDateEvent({

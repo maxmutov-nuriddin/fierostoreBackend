@@ -4,6 +4,14 @@ import { ensureAdminUser } from "./utils/seed-admin.js";
 import { app } from "./app.js";
 
 async function start() {
+  if (env.jwtSecret === "change-this-secret") {
+    console.warn("[WARN] JWT_SECRET is not set. Using insecure default — never deploy to production without setting JWT_SECRET.");
+  }
+
+  if (env.adminPassword === "change-admin-password") {
+    console.warn("[WARN] ADMIN_PASSWORD is not set. Using insecure default — set ADMIN_PASSWORD before going to production.");
+  }
+
   app.listen(env.port, () => {
     console.log(`Fierostore backend running on http://localhost:${env.port}`);
   });

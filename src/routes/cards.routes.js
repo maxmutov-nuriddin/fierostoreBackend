@@ -137,6 +137,10 @@ cardsRouter.post("/", requireAuth, requireAdmin, asyncHandler(async (req, res) =
 }));
 
 cardsRouter.put("/:id", requireAuth, requireAdmin, asyncHandler(async (req, res) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    return res.status(404).json({ message: "Card not found." });
+  }
+
   const card = await Card.findById(req.params.id);
 
   if (!card) {
@@ -179,10 +183,24 @@ cardsRouter.put("/:id", requireAuth, requireAdmin, asyncHandler(async (req, res)
 }));
 
 cardsRouter.delete("/:id", requireAuth, requireAdmin, asyncHandler(async (req, res) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    return res.status(404).json({ message: "Card not found." });
+  }
+
   const card = await Card.findById(req.params.id);
 
   if (!card) {
     return res.status(404).json({ message: "Card not found." });
+  }
+
+  for (const imagePath of card.images) {
+    if (imagePath.startsWith("/uploads/")) {
+      try {
+        fs.unlinkSync(path.resolve(imagePath.slice(1)));
+      } catch {
+        // File already gone; continue
+      }
+    }
   }
 
   await Review.deleteMany({ cardId: card._id });
@@ -199,11 +217,18 @@ cardsRouter.delete("/:id", requireAuth, requireAdmin, asyncHandler(async (req, r
 }));
 
 cardsRouter.post("/:id/images", requireAuth, requireAdmin, upload.array("images", 8), asyncHandler(async (req, res) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    for (const file of req.files ?? []) {
+      try { fs.unlinkSync(path.resolve(file.path)); } catch { /* already gone */ }
+    }
+    return res.status(404).json({ message: "Card not found." });
+  }
+
   const card = await Card.findById(req.params.id);
 
   if (!card) {
     for (const file of req.files ?? []) {
-      fs.unlinkSync(path.resolve(file.path));
+      try { fs.unlinkSync(path.resolve(file.path)); } catch { /* already gone */ }
     }
 
     return res.status(404).json({ message: "Card not found." });
