@@ -51,6 +51,11 @@ ordersRouter.post("/", attachUserIfPresent, asyncHandler(async (req, res) => {
   res.status(201).json(order);
 }));
 
+ordersRouter.get("/mine", requireAuth, asyncHandler(async (req, res) => {
+  const orders = await Order.find({ userId: req.user._id }).sort({ createdAt: -1 });
+  res.json(orders);
+}));
+
 ordersRouter.patch("/:id/status", requireAuth, requireAdmin, asyncHandler(async (req, res) => {
   const nextStatus = String(req.body.status ?? "");
   const allowed = ["new", "confirmed", "shipped", "delivered"];
