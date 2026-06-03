@@ -1,6 +1,7 @@
 import { connectDatabase } from "./config/database.js";
 import { env } from "./config/env.js";
 import { ensureAdminUser } from "./utils/seed-admin.js";
+import { seedStoreData } from "./utils/seed-data.js";
 import { app } from "./app.js";
 
 async function start() {
@@ -19,6 +20,17 @@ async function start() {
   try {
     await connectDatabase();
     await ensureAdminUser();
+
+    // Auto-seed a full demo catalog on a fresh database (no-op if products exist).
+    const seedResult = await seedStoreData();
+    if (seedResult.skipped) {
+      console.log(`Catalog ready (${seedResult.products} products already in DB).`);
+    } else {
+      console.log(
+        `Seeded demo data — ${seedResult.products} products, ${seedResult.reviews} reviews, ${seedResult.orders} orders.`
+      );
+    }
+
     console.log("MongoDB connected successfully.");
   } catch (error) {
     console.error("MongoDB connection failed. API will return 503 until DB is available.", error);

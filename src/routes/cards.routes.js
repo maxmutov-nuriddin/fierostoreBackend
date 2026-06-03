@@ -66,7 +66,7 @@ function normalizeCardInput(body) {
     sizes: Array.isArray(body.sizes) ? body.sizes : parseCsv(body.sizes),
     colors: Array.isArray(body.colors) ? body.colors : parseCsv(body.colors),
     description: String(body.description ?? "").trim(),
-    category: String(body.category ?? "").trim() || "T-shirts",
+    category: String(body.category ?? "").trim() || "Dresses",
     cardType: String(body.cardType ?? "").trim() || "standard",
     tags: Array.isArray(body.tags) ? body.tags : parseCsv(body.tags),
     featured: Boolean(body.featured),
